@@ -1,0 +1,7 @@
+Django>=3.2,<5
+djangorestframework>=3.12,<4
+psycopg2-binary>=2.9,<3
+python-dotenv>=1.0,<2
+django-cors-headers>=4.0
+google-genai>=1.0
+requests>=2.28

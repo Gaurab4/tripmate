@@ -1,0 +1,10 @@
+"""
+Root URL configuration. Routes /admin/ to Django admin, /api/ to the trips app.
+"""
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", include("trips.urls")),
+]
