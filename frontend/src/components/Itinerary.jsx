@@ -68,6 +68,7 @@ export default function Itinerary({ plan, onCustomize, customizing, readOnly }) 
               value={addType}
               onChange={(e) => setAddType(e.target.value)}
               className="add-activity-select"
+            >
               <option value="attraction">Attraction</option>
               <option value="food">Food</option>
               <option value="hotel">Hotel</option>
