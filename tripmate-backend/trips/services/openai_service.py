@@ -1,35 +1,41 @@
-"""Gemini-based itinerary generation and customization."""
+"""Gemini-based itinerary generation and customization (google.genai SDK)."""
 import json
 import os
 import re
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    return _client
+
+MODEL = "gemini-2.5-flash"
 
 SYSTEM_PROMPT = """You are an expert travel planner. Create day-by-day itineraries as JSON.
 
 CRITICAL RULES:
-1. TIME-BASED SCHEDULING: Schedule each activity at the best time of day for that experience:
-   - Sunrise/sunset viewpoints: early morning or late afternoon
-   - Museums/monuments: mid-morning or afternoon (when open)
-   - Markets/shopping: morning when fresh, or late afternoon
-   - Lunch: 12:00–14:00, Dinner: 19:00–21:00
-   - Temples/religious sites: morning (often best light and fewer crowds)
-   - Nightlife/evening spots: evening
-   Include a "time" field for each activity (e.g. "09:00", "14:30").
+1. DO NOT include flights or how to reach the destination. DO NOT include hotel check-in or checkout. The user is already at the destination (or will arrange travel and accommodation separately). Focus only on what to do and see and eat there.
 
-2. GEOGRAPHIC FLOW (ROUTE OPTIMIZATION): Plan a logical route from a starting point:
-   - Start from the natural entry point (airport, railway station, or hotel)
-   - Go to the hotel/check-in first if arriving
-   - Then visit nearby places first (within walking/short drive)
-   - Progress outward in ONE general direction — do not zigzag
-   - Avoid: one activity 10km north, next 10km south, then back north
-   - Cluster activities in the same area before moving to the next cluster
-   - Think: airport → hotel → nearby market → places near market → further attractions in same direction
+2. TIME-BASED SCHEDULING: Schedule each activity at the best time of day — but do NOT include a "time" field for: breakfast, lunch, dinner. Only include "time" for: attraction, viewpoint, trek, and similar activities (e.g. "09:00", "14:30").
+   - For meals (breakfast/lunch/dinner): recommend 2–3 great places per meal slot (e.g. "Breakfast options: Café A, Bistro B, Bakery C" in the description or as 2–3 separate food activities).
+   - Sunrise/sunset viewpoints: early morning or late afternoon; include "time".
+   - Museums/monuments: mid-morning or afternoon; include "time".
+   - Temples/religious sites: morning; include "time".
 
-3. Match user interests. Use the provided places data when relevant.
-4. Output valid JSON only. No markdown, no explanation.
+3. GEOGRAPHIC FLOW — keep activities nearby, no back-and-forth:
+   - If the user is at a place A, the NEXT activity must be near A — not far away and then later coming back to the same area. Plan in a logical sequence: stay in one area, then move to the next area; do not zigzag.
+   - Breakfast, lunch, and dinner: recommend places that are NEAR the area where the user is at that time (e.g. if morning activities are in the Old Town, suggest breakfast in or near Old Town; if afternoon is at the museum district, suggest lunch near that area). Never suggest a meal far from where they already are or will be.
+   - Cluster activities in the same zone before moving to another zone; avoid "go to A, then far to B, then back near A".
+
+4. Activity icons: use only "attraction" | "viewpoint" | "trek" | "food". Never use "flight" or "hotel".
+5. For every activity include "duration": a short estimate (e.g. "1–2 hours", "45 min") so users know how long each activity takes.
+6. Match user interests. Use the provided places data when relevant.
+7. Output valid JSON only. No markdown, no explanation.
 """
 
 USER_PROMPT_TEMPLATE = """Create a trip plan for {destination} from {start_date} to {end_date}.
@@ -39,7 +45,12 @@ Places data (use when relevant):
 {places_json}
 
 Return JSON array of days. Each day: {{"day": 1, "date": "YYYY-MM-DD", "activities": [...]}}
-Each activity: {{"name": "...", "description": "...", "icon": "flight|hotel|attraction|food", "time": "HH:MM"}}
+Each activity: {{"name": "...", "description": "...", "icon": "attraction|viewpoint|trek|food", "time": "HH:MM", "duration": "e.g. 1–2 hours or 45 min"}}
+- Include "time" only for non-food activities. Omit "time" for breakfast/lunch/dinner.
+- Include "duration" for every activity: estimated time for that activity (e.g. "1–2 hours", "45 min", "30 min") so the user knows how long it will take.
+- For breakfast, lunch, and dinner: recommend 2–3 great places each, and place them NEAR the area where the user is at that time (e.g. breakfast near morning activities, lunch near midday activities).
+- Do not include flights, hotel check-in, or hotel checkout.
+- Keep the route logical: next activity near the previous one; no far-away then back-to-same-area.
 """
 
 CUSTOMIZE_PROMPT_TEMPLATE = """Current plan (JSON):
@@ -55,14 +66,12 @@ Return the updated plan as a JSON array of days (same format). No markdown, no e
 def _parse_json_from_text(text):
     """Extract JSON from model response, handling markdown code blocks."""
     text = (text or "").strip()
-    # Remove markdown code blocks
     match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
     if match:
         text = match.group(1).strip()
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        # Try to find JSON array
         match = re.search(r"\[\s*\{[\s\S]*\}\s*\]", text)
         if match:
             return json.loads(match.group(0))
@@ -82,11 +91,12 @@ def generate_itinerary(destination, start_date, end_date, interests, places_data
         places_json=places_json,
     )
 
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT,
+    client = _get_client()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
     )
-    response = model.generate_content(prompt)
     text = response.text if response else ""
     plan = _parse_json_from_text(text)
     if not isinstance(plan, list):
@@ -99,8 +109,12 @@ def customize_itinerary(plan, action, day_index, activity_index=None, activity_t
     plan_json = json.dumps(plan, indent=2)
     extra = ""
     if action == "add":
-        time_note = f" The user wants this activity at {activity_time}." if activity_time else ""
-        extra = f'Add a new activity (type: {activity_type}) that fits the day and follows time + route rules.{time_note} Include "time": "{activity_time or "12:00"}" in the new activity.'
+        # No time for food/hotel; require time for attraction/viewpoint/trek
+        if activity_type in ("food", "eating", "hotel"):
+            extra = f'Add a new activity (type: {activity_type}) that fits the day. Do NOT include a "time" field for this activity.'
+        else:
+            time_note = f" The user wants this activity at {activity_time}." if activity_time else ""
+            extra = f'Add a new activity (type: {activity_type}) that fits the day and follows time + route rules.{time_note} Include "time": "{activity_time or "12:00"}" in the new activity.'
     elif action == "replace" and activity_index is not None:
         extra = f"Replace the activity at index {activity_index} with a different one (type: {activity_type})."
     elif action == "remove" and activity_index is not None:
@@ -113,11 +127,12 @@ def customize_itinerary(plan, action, day_index, activity_index=None, activity_t
         extra=extra,
     )
 
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT,
+    client = _get_client()
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT),
     )
-    response = model.generate_content(prompt)
     text = response.text if response else ""
     new_plan = _parse_json_from_text(text)
     if not isinstance(new_plan, list):

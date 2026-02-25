@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import Box from '@mui/material/Box'
+import Paper from '@mui/material/Paper'
+import Typography from '@mui/material/Typography'
+import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button'
 import { useAuth } from '../context/AuthContext'
 import { login } from '../api'
 
@@ -27,43 +32,23 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="container">
-        <div className="card auth-card">
-          <h1 className="page-title">Log in</h1>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="username"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-            </div>
-            {error && <p className="error-msg">{error}</p>}
-            <button type="submit" className="btn btn-primary" disabled={submitting}>
+    <Box className="min-h-[calc(100vh-60px)] flex items-center justify-center py-8 px-6">
+      <Box className="max-w-[480px] w-full mx-auto">
+        <Paper variant="outlined" className="p-8 rounded-app border border-app-border bg-surface shadow-app max-w-[380px] mx-auto" sx={{ bgcolor: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <Typography variant="h5" component="h1" className="mb-5 text-center text-app-text" sx={{ color: 'var(--text)' }}>Log in</Typography>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <TextField id="username" label="Username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required autoComplete="username" fullWidth variant="outlined" size="small" sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'var(--surface-2)' } }} />
+            <TextField id="password" label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" fullWidth variant="outlined" size="small" sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'var(--surface-2)' } }} />
+            {error && <Typography color="error" className="text-sm mt-1">{error}</Typography>}
+            <Button type="submit" variant="contained" fullWidth disabled={submitting} className="mt-1 bg-accent hover:bg-accent-hover" sx={{ bgcolor: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-hover)' } }}>
               {submitting ? 'Logging in…' : 'Log in'}
-            </button>
+            </Button>
           </form>
-          <p className="auth-footer">
-            Don't have an account? <Link to="/register">Register</Link>
-          </p>
-        </div>
-      </div>
-    </div>
+          <Typography className="mt-5 text-center text-muted text-sm" sx={{ color: 'var(--muted)' }}>
+            Don't have an account? <Link to="/register" className="font-medium text-accent" style={{ color: 'var(--accent)' }}>Register</Link>
+          </Typography>
+        </Paper>
+      </Box>
+    </Box>
   )
 }
