@@ -1,8 +1,12 @@
 import { useState } from 'react'
+import Typography from '@mui/material/Typography'
+import TextField from '@mui/material/TextField'
+import MenuItem from '@mui/material/MenuItem'
+import Button from '@mui/material/Button'
 import DayCard from './DayCard'
 import Modal from './Modal'
 
-export default function Itinerary({ plan, onCustomize, customizing, readOnly }) {
+export default function Itinerary({ plan, destination, onCustomize, customizing, readOnly }) {
   const [addModal, setAddModal] = useState({ open: false, dayIndex: null })
   const [addTime, setAddTime] = useState('12:00')
   const [addType, setAddType] = useState('attraction')
@@ -25,19 +29,26 @@ export default function Itinerary({ plan, onCustomize, customizing, readOnly }) 
 
   function handleAddConfirm() {
     if (addModal.dayIndex == null) return
-    onCustomize?.('add', addModal.dayIndex, null, addType, addTime)
+    const needsTime = !['food', 'eating'].includes(addType)
+    onCustomize?.('add', addModal.dayIndex, null, addType, needsTime ? addTime : null)
     setAddModal({ open: false, dayIndex: null })
   }
 
   return (
-    <div className="itinerary-card">
-      <h2 className="itinerary-title">Your itinerary</h2>
+    <div
+      className="rounded-app-lg border border-app-border bg-surface p-6 shadow-app-lg"
+      style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', boxShadow: 'var(--shadow-lg)' }}
+    >
+      <Typography variant="h6" component="h2" className="text-xl font-semibold mb-6 text-app-text" sx={{ color: 'var(--text)' }}>
+        Your itinerary
+      </Typography>
       <div>
         {plan.map((dayData, idx) => (
           <DayCard
             key={dayData.day ?? idx}
             dayData={dayData}
             dayIndex={idx}
+            destination={destination}
             onReplace={handleReplace}
             onRemove={handleRemove}
             onAdd={handleAddClick}
@@ -51,46 +62,63 @@ export default function Itinerary({ plan, onCustomize, customizing, readOnly }) 
         onClose={() => setAddModal({ open: false, dayIndex: null })}
         title="Add activity"
       >
-        <div className="add-activity-form">
-          <div className="form-group">
-            <label className="add-activity-label">At what time?</label>
-            <input
-              type="time"
-              value={addTime}
-              onChange={(e) => setAddTime(e.target.value)}
-              className="form-group input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="add-activity-label">Type</label>
-            <select
+        <div className="space-y-5">
+          {!['food', 'eating'].includes(addType) && (
+            <div className="mb-5">
+              <Typography component="label" className="block mb-1.5 text-text-soft text-sm font-medium" sx={{ color: 'var(--text-soft)' }}>
+                At what time?
+              </Typography>
+              <TextField
+                type="time"
+                value={addTime}
+                onChange={(e) => setAddTime(e.target.value)}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'var(--surface-2)' } }}
+              />
+            </div>
+          )}
+          <div className="mb-5">
+            <Typography component="label" className="block mb-1.5 text-text-soft text-sm font-medium" sx={{ color: 'var(--text-soft)' }}>
+              Type
+            </Typography>
+            <TextField
+              select
               value={addType}
               onChange={(e) => setAddType(e.target.value)}
-              className="add-activity-select"
+              variant="outlined"
+              size="small"
+              fullWidth
+              sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'var(--surface-2)' } }}
             >
-              <option value="attraction">Attraction</option>
-              <option value="food">Food</option>
-              <option value="hotel">Hotel</option>
-              <option value="flight">Flight</option>
-            </select>
+              <MenuItem value="attraction">Attraction</MenuItem>
+              <MenuItem value="viewpoint">Admire / Viewpoint</MenuItem>
+              <MenuItem value="trek">Trek</MenuItem>
+              <MenuItem value="eating">Eating place</MenuItem>
+              <MenuItem value="food">Food</MenuItem>
+            </TextField>
           </div>
-          <div className="add-activity-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
+          <div className="flex gap-3 justify-end mt-6">
+            <Button
+              variant="outlined"
+              color="primary"
               onClick={() => setAddModal({ open: false, dayIndex: null })}
+              className="border-accent text-accent hover:bg-accent-soft"
+              sx={{ borderColor: 'var(--accent)', color: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-soft)' } }}
             >
               Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
+            </Button>
+            <Button
+              variant="contained"
               onClick={handleAddConfirm}
               disabled={customizing}
+              className="bg-accent hover:bg-accent-hover"
+              sx={{ bgcolor: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-hover)' } }}
             >
               Add
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

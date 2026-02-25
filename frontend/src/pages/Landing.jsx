@@ -1,61 +1,62 @@
 import { Link } from 'react-router-dom'
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import Button from '@mui/material/Button'
 
 export default function Landing() {
   return (
-    <main className="landing">
-      <section className="hero">
-        <h1 className="hero-title">
-          Plan your next trip, <span className="hero-accent">one place.</span>
-        </h1>
-        <p className="hero-subtitle">
+    <Box component="main" className="pb-12">
+      <Box component="section" className="text-center py-12 px-6 max-w-[560px] mx-auto">
+        <Typography variant="h1" className="text-[clamp(1.75rem,5vw,2.25rem)] font-bold leading-tight m-0 mb-4 text-app-text" sx={{ color: 'var(--text)' }}>
+          Plan your next trip, <span className="text-accent" style={{ color: 'var(--accent)' }}>one place.</span>
+        </Typography>
+        <Typography className="text-[1.05rem] text-text-soft m-0 mb-7 leading-relaxed" sx={{ color: 'var(--text-soft)' }}>
           TripMate helps you search for destinations, save itineraries, and keep all your travel plans in one place.
-        </p>
-        <div className="hero-cta">
-          <Link to="/" className="btn btn-hero btn-primary">
+        </Typography>
+        <Box className="flex flex-col gap-3 items-center">
+          <Button component={Link} to="/" variant="contained" className="min-w-[220px] py-3 px-6 font-semibold rounded-app normal-case bg-accent hover:bg-accent-hover text-white" sx={{ bgcolor: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-hover)' } }}>
             Plan a trip (no account needed)
-          </Link>
-          <Link to="/register" className="btn btn-hero btn-ghost">
+          </Button>
+          <Button component={Link} to="/register" variant="outlined" className="min-w-[220px] py-3 px-6 font-semibold rounded-app normal-case bg-transparent text-muted border border-app-border hover:text-text-soft hover:border-muted" sx={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>
             Get started — it's free
-          </Link>
-          <Link to="/login" className="btn btn-hero btn-ghost">
+          </Button>
+          <Button component={Link} to="/login" variant="outlined" className="min-w-[220px] py-3 px-6 font-semibold rounded-app normal-case bg-transparent text-muted border border-app-border hover:text-text-soft hover:border-muted" sx={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>
             I already have an account
-          </Link>
-        </div>
-      </section>
+          </Button>
+        </Box>
+      </Box>
 
-      <section className="about">
-        <h2 className="about-title">What is TripMate?</h2>
-        <p className="about-lead">
+      <Box component="section" className="max-w-[560px] mx-auto px-6 pb-8">
+        <Typography variant="h2" className="text-[1.35rem] font-semibold m-0 mb-3 text-app-text" sx={{ color: 'var(--text)' }}>
+          What is TripMate?
+        </Typography>
+        <Typography className="text-text-soft m-0 mb-6 leading-relaxed" sx={{ color: 'var(--text-soft)' }}>
           TripMate is your travel planning companion. Create an account to search for places, save itineraries you like, and come back to them anytime.
-        </p>
-        <ul className="features">
-          <li className="feature">
-            <span className="feature-icon" aria-hidden>📍</span>
-            <div>
-              <strong>Search itineraries</strong> — Look up destinations and trip ideas.
-            </div>
+        </Typography>
+        <ul className="list-none p-0 m-0 mb-6">
+          <li className="flex gap-4 items-start py-4 border-b border-app-border text-text-soft leading-normal" sx={{ borderColor: 'var(--border)' }}>
+            <span className="text-2xl shrink-0" aria-hidden>📍</span>
+            <div><strong className="text-app-text" style={{ color: 'var(--text)' }}>Search itineraries</strong> — Look up destinations and trip ideas.</div>
           </li>
-          <li className="feature">
-            <span className="feature-icon" aria-hidden>💾</span>
-            <div>
-              <strong>Save what you like</strong> — Keep your favourite itineraries in one list.
-            </div>
+          <li className="flex gap-4 items-start py-4 border-b border-app-border text-text-soft leading-normal" sx={{ borderColor: 'var(--border)' }}>
+            <span className="text-2xl shrink-0" aria-hidden>💾</span>
+            <div><strong className="text-app-text" style={{ color: 'var(--text)' }}>Save what you like</strong> — Keep your favourite itineraries in one list.</div>
           </li>
-          <li className="feature">
-            <span className="feature-icon" aria-hidden>✏️</span>
-            <div>
-              <strong>Edit anytime</strong> — Add dates, notes, and day-by-day plans.
-            </div>
+          <li className="flex gap-4 items-start py-4 border-b border-app-border text-text-soft leading-normal last:border-b-0" sx={{ borderColor: 'var(--border)' }}>
+            <span className="text-2xl shrink-0" aria-hidden>✏️</span>
+            <div><strong className="text-app-text" style={{ color: 'var(--text)' }}>Edit anytime</strong> — Add dates, notes, and day-by-day plans.</div>
           </li>
         </ul>
-        <div className="about-cta">
-          <Link to="/register" className="btn btn-primary">Create free account</Link>
-        </div>
-      </section>
+        <Box className="text-center">
+          <Button component={Link} to="/register" variant="contained" className="bg-accent hover:bg-accent-hover" sx={{ bgcolor: 'var(--accent)', '&:hover': { bgcolor: 'var(--accent-hover)' } }}>
+            Create free account
+          </Button>
+        </Box>
+      </Box>
 
-      <footer className="landing-footer">
-        <p>TripMate — Plan. Save. Travel.</p>
-      </footer>
-    </main>
+      <Box component="footer" className="text-center py-8 px-6 text-muted text-sm border-t border-app-border" sx={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>
+        <Typography component="p" className="m-0">TripMate — Plan. Save. Travel.</Typography>
+      </Box>
+    </Box>
   )
 }

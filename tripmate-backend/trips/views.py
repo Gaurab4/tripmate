@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Itinerary
+from .models import Itinerary, TripGeneration
 from .serializers import (
     ItinerarySerializer,
     TripCreateSerializer,
@@ -60,10 +60,37 @@ def trip_list(request):
     return Response({"trips": []})
 
 
+def _run_trip_generation(trip_id):
+    """Background task: run AI and update TripGeneration."""
+    from .models import TripGeneration
+    try:
+        trip = TripGeneration.objects.get(pk=trip_id)
+    except TripGeneration.DoesNotExist:
+        return
+    try:
+        places = search_places(trip.destination, types="attraction")
+        plan = generate_itinerary(
+            destination=trip.destination,
+            start_date=trip.start_date,
+            end_date=trip.end_date,
+            interests=trip.interests or [],
+            places_data=places,
+        )
+        trip.plan = plan or []
+        trip.status = TripGeneration.STATUS_COMPLETED
+        trip.save(update_fields=["plan", "status", "updated_at"])
+        print("[TripMate] Trip generation completed:", trip.uuid)
+    except Exception as e:
+        trip.status = TripGeneration.STATUS_FAILED
+        trip.error_message = str(e)[:500]
+        trip.save(update_fields=["status", "error_message", "updated_at"])
+        print("[TripMate] Trip generation failed:", trip.uuid, e)
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def trip_create(request):
-    """POST /api/trips/create/ — generate itinerary from destination, dates, interests."""
+    """POST /api/trips/create/ — create trip record and return uuid; AI runs in background."""
     serializer = TripCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
@@ -72,26 +99,65 @@ def trip_create(request):
     end_date = data["end_date"]
     interests = data.get("interests", []) or []
 
-    print("[TripMate] Starting search places...")
-    places = search_places(destination, types="attraction")
-    print("[TripMate] Starting generate itinerary...")
-    plan = generate_itinerary(
+    trip = TripGeneration.objects.create(
         destination=destination,
         start_date=start_date,
         end_date=end_date,
         interests=interests,
-        places_data=places,
+        status=TripGeneration.STATUS_PENDING,
     )
+    import threading
+    thread = threading.Thread(target=_run_trip_generation, args=(trip.pk,))
+    thread.daemon = True
+    thread.start()
+    print("[TripMate] Created trip", trip.uuid, "— generation started in background")
 
     return Response({
+        "uuid": str(trip.uuid),
         "destination": destination,
-        "start_date": start_date,
-        "end_date": end_date,
+        "start_date": str(start_date),
+        "end_date": str(end_date),
         "interests": interests,
-        "plan": plan,
-        "flights": [],
-        "hotels": [],
-    })
+        "status": TripGeneration.STATUS_PENDING,
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def trip_get(request, uuid):
+    """GET /api/trips/<uuid>/ — get trip by uuid (for polling). If user is logged in and trip completed, auto-save to their profile."""
+    try:
+        trip = TripGeneration.objects.get(uuid=uuid)
+    except TripGeneration.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    payload = {
+        "uuid": str(trip.uuid),
+        "destination": trip.destination,
+        "start_date": str(trip.start_date),
+        "end_date": str(trip.end_date),
+        "interests": trip.interests or [],
+        "status": trip.status,
+    }
+    if trip.status == TripGeneration.STATUS_COMPLETED:
+        payload["plan"] = trip.plan or []
+        payload["flights"] = []
+        payload["hotels"] = []
+        # If user is logged in, create an Itinerary on their profile (once per user per generation)
+        if request.user.is_authenticated:
+            if not Itinerary.objects.filter(user=request.user, trip_generation=trip).exists():
+                Itinerary.objects.create(
+                    user=request.user,
+                    trip_generation=trip,
+                    title=f"{trip.destination} Trip",
+                    destination=trip.destination,
+                    start_date=trip.start_date,
+                    end_date=trip.end_date,
+                    interests=trip.interests or [],
+                    plan=trip.plan or [],
+                )
+    elif trip.status == TripGeneration.STATUS_FAILED:
+        payload["error_message"] = trip.error_message or "Generation failed"
+    return Response(payload)
 
 
 @api_view(["PATCH"])
@@ -179,10 +245,10 @@ def itinerary_list(request):
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
-def itinerary_detail(request, pk):
-    """GET/PUT/PATCH/DELETE /api/itineraries/<id>/ — one itinerary (only owner)."""
+def itinerary_detail(request, uuid):
+    """GET/PUT/PATCH/DELETE /api/itineraries/<uuid>/ — one itinerary (only owner)."""
     try:
-        obj = Itinerary.objects.get(pk=pk, user=request.user)
+        obj = Itinerary.objects.get(uuid=uuid, user=request.user)
     except Itinerary.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 

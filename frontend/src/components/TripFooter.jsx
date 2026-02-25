@@ -1,41 +1,13 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { createItinerary } from '../api'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 
-export default function TripFooter({ tripData, onSaveSuccess }) {
-  const { isAuthenticated } = useAuth()
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+export default function TripFooter({ tripData }) {
   const [copied, setCopied] = useState(false)
 
   if (!tripData) return null
 
-  const { destination, start_date, end_date, interests, plan } = tripData
-
-  async function handleSave() {
-    if (!isAuthenticated) {
-      setError('Please log in to save your trip.')
-      return
-    }
-    setError('')
-    setSaving(true)
-    try {
-      const saved = await createItinerary({
-        title: `${destination} Trip`,
-        destination,
-        start_date,
-        end_date,
-        interests: interests || [],
-        plan: plan || [],
-      })
-      onSaveSuccess?.(saved)
-    } catch (e) {
-      setError(e.message || 'Failed to save')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const { destination, start_date, end_date, plan } = tripData
 
   function handleDownload() {
     const blob = new Blob(
@@ -61,24 +33,29 @@ export default function TripFooter({ tripData, onSaveSuccess }) {
   }
 
   return (
-    <footer className="trip-footer">
-      <div className="trip-footer-actions">
-        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save Trip'}
-        </button>
-        <button type="button" className="trip-footer-ghost" onClick={handleDownload}>
+    <Box
+      component="footer"
+      className="sticky bottom-0 border-t border-app-border bg-surface py-4 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+      sx={{ borderColor: 'var(--border)', bgcolor: 'var(--surface)' }}
+    >
+      <div className="max-w-[56rem] mx-auto flex flex-wrap items-center justify-center gap-4">
+        <Button
+          variant="outlined"
+          className="border-app-border text-app-text hover:bg-surface-2"
+          sx={{ borderColor: 'var(--border)', color: 'var(--text)', '&:hover': { bgcolor: 'var(--surface-2)' } }}
+          onClick={handleDownload}
+        >
           Download JSON
-        </button>
-        <button type="button" className="trip-footer-ghost" onClick={handleShare}>
+        </Button>
+        <Button
+          variant="outlined"
+          className="border-app-border text-app-text hover:bg-surface-2"
+          sx={{ borderColor: 'var(--border)', color: 'var(--text)', '&:hover': { bgcolor: 'var(--surface-2)' } }}
+          onClick={handleShare}
+        >
           {copied ? 'Copied!' : 'Share'}
-        </button>
+        </Button>
       </div>
-      {error && <p className="trip-footer-error">{error}</p>}
-      {!isAuthenticated && (
-        <p className="trip-footer-hint">
-          <Link to="/login">Log in</Link> to save trips to your account.
-        </p>
-      )}
-    </footer>
+    </Box>
   )
 }

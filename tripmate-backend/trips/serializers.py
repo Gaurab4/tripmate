@@ -22,6 +22,7 @@ class ItinerarySerializer(serializers.ModelSerializer):
         model = Itinerary
         fields = (
             "id",
+            "uuid",
             "title",
             "destination",
             "start_date",
@@ -40,7 +41,7 @@ class ItineraryListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Itinerary
-        fields = ("id", "title", "destination", "start_date", "end_date", "interests", "created_at")
+        fields = ("id", "uuid", "title", "destination", "start_date", "end_date", "interests", "created_at")
 
 
 class TripCreateSerializer(serializers.Serializer):

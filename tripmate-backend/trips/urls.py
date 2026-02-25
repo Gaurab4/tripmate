@@ -7,6 +7,7 @@ urlpatterns = [
     path("trips/", views.trip_list),
     path("trips/create/", views.trip_create),
     path("trips/customize/", views.trip_customize_anon),
+    path("trips/<uuid:uuid>/", views.trip_get),
     path("trips/<int:pk>/edit/", views.trip_edit),
     path("trips/<int:pk>/customize/", views.trip_customize_by_id),
     path("places/search/", views.places_search),
@@ -14,5 +15,5 @@ urlpatterns = [
     path("auth/login/", obtain_auth_token),
     path("auth/me/", views.current_user),
     path("itineraries/", views.itinerary_list),
-    path("itineraries/<int:pk>/", views.itinerary_detail),
+    path("itineraries/<uuid:uuid>/", views.itinerary_detail),
 ]
