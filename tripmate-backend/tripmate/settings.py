@@ -11,7 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-change-me-in-production")
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.environ.get(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,tripmateplanner.com,www.tripmateplanner.com"
+).split(",")
 
 INSTALLED_APPS = [
     "corsheaders",
@@ -38,7 +41,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",   # MUST be first
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -93,15 +96,42 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ----------------------------
+# CORS CONFIG (FINAL FIX)
+# ----------------------------
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
-
-# CORS: comma-separated origins, e.g. https://myapp.com,https://www.myapp.com
-_cors = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
-CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
+# Allow ALL Vercel preview + production URLs
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"https://.*\.vercel\.app",
 ]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+# ----------------------------
+# CSRF FIX (CRITICAL)
+# ----------------------------
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.vercel.app",
+    "https://tripmateplanner.com",
+    "https://www.tripmateplanner.com",
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+# ----------------------------
+# API KEYS
+# ----------------------------
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
-
-
