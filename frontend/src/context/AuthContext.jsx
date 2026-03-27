@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { API_BASE } from '../api'
 
 const AuthContext = createContext(null)
 
@@ -35,7 +36,7 @@ export function AuthProvider({ children }) {
       setLoading(false)
       return
     }
-    fetch('/api/auth/me/', {
+    fetch(`${API_BASE}/api/auth/me/`, {
       headers: { Authorization: `Token ${token}` },
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))

@@ -93,7 +93,11 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+
+# CORS: comma-separated origins, e.g. https://myapp.com,https://www.myapp.com
+_cors = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173 ,https://trip-ai-mate.vercel.app")
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(",") if o.strip()]
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")

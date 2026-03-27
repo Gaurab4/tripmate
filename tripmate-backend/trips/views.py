@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -145,16 +146,20 @@ def trip_get(request, uuid):
         # If user is logged in, create an Itinerary on their profile (once per user per generation)
         if request.user.is_authenticated:
             if not Itinerary.objects.filter(user=request.user, trip_generation=trip).exists():
-                Itinerary.objects.create(
-                    user=request.user,
-                    trip_generation=trip,
-                    title=f"{trip.destination} Trip",
-                    destination=trip.destination,
-                    start_date=trip.start_date,
-                    end_date=trip.end_date,
-                    interests=trip.interests or [],
-                    plan=trip.plan or [],
-                )
+                try:
+                    Itinerary.objects.create(
+                        user=request.user,
+                        trip_generation=trip,
+                        title=f"{trip.destination} Trip",
+                        destination=trip.destination,
+                        start_date=trip.start_date,
+                        end_date=trip.end_date,
+                        interests=trip.interests or [],
+                        plan=trip.plan or [],
+                    )
+                except IntegrityError:
+                    # User may not exist in this DB (e.g. switched from local to Docker)
+                    pass
     elif trip.status == TripGeneration.STATUS_FAILED:
         payload["error_message"] = trip.error_message or "Generation failed"
     return Response(payload)
