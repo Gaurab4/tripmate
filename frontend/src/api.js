@@ -1,3 +1,6 @@
+// In production, set VITE_API_URL to your backend (e.g. https://api.myapp.com)
+export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('tripmate_token')
   return token ? { Authorization: `Token ${token}` } : {}
@@ -6,8 +9,9 @@ const getAuthHeaders = () => {
 export const GENERIC_ERROR_MESSAGE = 'There is some issue and we are resolving it.'
 
 async function apiFetch(url, options = {}) {
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`
   try {
-    const res = await fetch(url, options)
+    const res = await fetch(fullUrl, options)
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(GENERIC_ERROR_MESSAGE)
     return data
