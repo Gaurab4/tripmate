@@ -1,24 +1,25 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { API_BASE } from '../api'
+import type { AuthContextValue, User } from '../types'
 
-const AuthContext = createContext(null)
+const AuthContext = createContext<AuthContextValue | null>(null)
 
 const TOKEN_KEY = 'tripmate_token'
 const USER_KEY = 'tripmate_user'
 
-export function AuthProvider({ children }) {
-  const [token, setTokenState] = useState(() => localStorage.getItem(TOKEN_KEY))
-  const [user, setUser] = useState(() => {
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
+  const [user, setUser] = useState<User | null>(() => {
     try {
       const s = localStorage.getItem(USER_KEY)
-      return s ? JSON.parse(s) : null
+      return s ? (JSON.parse(s) as User) : null
     } catch {
       return null
     }
   })
   const [loading, setLoading] = useState(true)
 
-  const setToken = useCallback((newToken) => {
+  const setToken = useCallback((newToken: string | null) => {
     setTokenState(newToken)
     if (newToken) localStorage.setItem(TOKEN_KEY, newToken)
     else localStorage.removeItem(TOKEN_KEY)
@@ -39,8 +40,8 @@ export function AuthProvider({ children }) {
     fetch(`${API_BASE}/api/auth/me/`, {
       headers: { Authorization: `Token ${token}` },
     })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('unauthorized'))))
+      .then((data: User) => {
         setUser(data)
         localStorage.setItem(USER_KEY, JSON.stringify(data))
       })
@@ -50,7 +51,7 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [token, logout])
 
-  const value = {
+  const value: AuthContextValue = {
     token,
     user,
     loading,
@@ -63,7 +64,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
