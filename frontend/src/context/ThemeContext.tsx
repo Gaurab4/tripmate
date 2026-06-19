@@ -1,11 +1,13 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import type { ThemeContextValue } from '../types'
 
-const ThemeContext = createContext(null)
+const ThemeContext = createContext<ThemeContextValue | null>(null)
 const STORAGE_KEY = 'tripmate_theme'
 
-export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'light'
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored === 'dark' ? 'dark' : 'light'
   })
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function ThemeProvider({ children }) {
   )
 }
 
-export function useTheme() {
+export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext)
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
   return ctx
