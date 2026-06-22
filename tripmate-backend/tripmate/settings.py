@@ -72,7 +72,7 @@ TEMPLATES = [
 
 _db_host = os.environ.get("DB_HOST", "localhost")
 _db_sslmode = os.environ.get("DB_SSLMODE", "")
-if not _db_sslmode and "supabase.co" in _db_host:
+if not _db_sslmode and ("supabase.co" in _db_host or "pooler.supabase.com" in _db_host):
     _db_sslmode = "require"
 
 DATABASES = {
