@@ -1,0 +1,40 @@
+# Render Blueprint — TripMate backend (Django) + Supabase (Postgres)
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: tripmate-api
+    runtime: python
+    plan: free
+    rootDir: tripmate-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate --noinput && gunicorn tripmate.wsgi:application --bind 0.0.0.0:$PORT --workers 2
+    healthCheckPath: /api/trips/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false

@@ -13,7 +13,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-change-me-in-p
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,tripmateplanner.com,www.tripmateplanner.com"
+    "localhost,127.0.0.1",
 ).split(",")
 
 INSTALLED_APPS = [
@@ -70,16 +70,23 @@ TEMPLATES = [
     },
 ]
 
+_db_host = os.environ.get("DB_HOST", "localhost")
+_db_sslmode = os.environ.get("DB_SSLMODE", "")
+if not _db_sslmode and "supabase.co" in _db_host:
+    _db_sslmode = "require"
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME", "tripmate"),
         "USER": os.environ.get("DB_USER", "tripuser"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "HOST": _db_host,
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
+if _db_sslmode:
+    DATABASES["default"]["OPTIONS"] = {"sslmode": _db_sslmode}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -106,6 +113,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "https://trip-ai-mate.vercel.app",
 ]
+_extra_cors = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if _extra_cors:
+    CORS_ALLOWED_ORIGINS.extend(
+        origin.strip() for origin in _extra_cors.split(",") if origin.strip()
+    )
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -128,9 +140,12 @@ CORS_ALLOW_METHODS = [
 # ----------------------------
 CSRF_TRUSTED_ORIGINS = [
     "https://*.vercel.app",
-    "https://tripmateplanner.com",
-    "https://www.tripmateplanner.com",
 ]
+_extra_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if _extra_csrf:
+    CSRF_TRUSTED_ORIGINS.extend(
+        origin.strip() for origin in _extra_csrf.split(",") if origin.strip()
+    )
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True

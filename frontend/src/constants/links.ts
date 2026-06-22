@@ -3,4 +3,4 @@ export const MEDIUM_ARTICLE_URL =
 
 export const GITHUB_REPO_URL = 'https://github.com/Gaurab4/tripmate'
 
-export const LIVE_APP_URL = 'https://trip-ai-mate.vercel.app'
+export const LIVE_APP_URL = 'https://tripmateplanner.com'
