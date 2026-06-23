@@ -18,6 +18,13 @@ from .services.places_service import search_places
 User = get_user_model()
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def health(request):
+    """GET /api/health/ — liveness check for Render (no database)."""
+    return Response({"status": "ok"})
+
+
 # ----- Auth -----
 
 @api_view(["POST"])

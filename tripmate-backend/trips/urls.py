@@ -4,6 +4,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from . import views
 
 urlpatterns = [
+    path("health/", views.health),
     path("trips/", views.trip_list),
     path("trips/create/", views.trip_create),
     path("trips/customize/", views.trip_customize_anon),
