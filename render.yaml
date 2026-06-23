@@ -7,8 +7,9 @@ services:
     plan: free
     rootDir: tripmate-backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate --noinput && gunicorn tripmate.wsgi:application --bind 0.0.0.0:$PORT --workers 2
-    healthCheckPath: /api/trips/
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn tripmate.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --graceful-timeout 30
+    healthCheckPath: /api/health/
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
@@ -17,7 +18,7 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        sync: false
+        value: ".onrender.com"
       - key: DB_HOST
         sync: false
       - key: DB_PORT
